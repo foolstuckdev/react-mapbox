@@ -2,6 +2,13 @@ import React, { Component } from "react";
 import { render } from "react-dom";
 import MapGL, { NavigationControl, GeolocateControl } from "react-map-gl";
 import { Editor, EditorModes } from "react-map-gl-draw";
+import { GeoJsonLayer } from "deck.gl";
+import Geocoder from "react-map-gl-geocoder";
+import DatePicker from "react-datepicker";
+
+import "react-map-gl-geocoder/dist/mapbox-gl-geocoder.css";
+import "mapbox-gl/dist/mapbox-gl.css";
+import "react-datepicker/dist/react-datepicker.css";
 
 import ControlPanel from "./control-panel";
 import { getFeatureStyle, getEditHandleStyle } from "./style";
@@ -33,13 +40,40 @@ export default class App extends Component {
         latitude: 42.76,
         zoom: 1
       },
+      searchResultLayer: null,
       mode: EditorModes.READ_ONLY,
       selectedFeatureIndex: null
     };
   }
 
+  mapRef = React.createRef();
+
   _updateViewport = viewport => {
-    this.setState({ viewport });
+    this.setState({
+      viewport: { ...this.state.viewport, ...viewport }
+    });
+  };
+
+  _updateGeocoderViewportChange = viewport => {
+    const geocoderDefaultOverrides = { transitionDuration: 2000 };
+    return this._updateViewport({
+      ...viewport,
+      ...geocoderDefaultOverrides
+    });
+  };
+
+  _onResult = event => {
+    console.log(event);
+    this.setState({
+      searchResultLayer: new GeoJsonLayer({
+        id: "search-result",
+        data: event.result.geometry,
+        getFillColor: [255, 0, 0, 128],
+        getRadius: 1000,
+        pointRadiusMinPixels: 10,
+        pointRadiusMaxPixels: 10
+      })
+    });
   };
 
   _onSelect = options => {
@@ -108,28 +142,44 @@ export default class App extends Component {
   render() {
     const { viewport, mode } = this.state;
     return (
-      <MapGL
-        {...viewport}
-        width="100%"
-        height="100%"
-        mapStyle="mapbox://styles/mapbox/satellite-v9"
-        mapboxApiAccessToken={TOKEN}
-        onViewportChange={this._updateViewport}
-      >
-        <Editor
-          ref={_ => (this._editorRef = _)}
-          style={{ width: "100%", height: "100%" }}
-          clickRadius={12}
-          mode={mode}
-          onSelect={this._onSelect}
-          onUpdate={this._onUpdate}
-          editHandleShape={"circle"}
-          featureStyle={getFeatureStyle}
-          editHandleStyle={getEditHandleStyle}
-        />
-        {this._renderDrawTools()}
-        {this._renderControlPanel()}
-      </MapGL>
+      <div style={{ height: "100vh" }}>
+        <MapGL
+          ref={this.mapRef}
+          {...viewport}
+          width="100%"
+          height="100%"
+          mapStyle="mapbox://styles/mapbox/satellite-v9"
+          mapboxApiAccessToken={TOKEN}
+          onViewportChange={this._updateViewport}
+        >
+          {/* <DatePicker
+            selected={this.state.date}
+            onSelect={this.handleSelect}
+            onChange={this.handleChange}
+          /> */}
+          <Geocoder
+            mapRef={this.mapRef}
+            onResult={this._onResult}
+            onViewportChange={this._updateViewport}
+            mapboxApiAccessToken={TOKEN}
+            position="top-right"
+          />
+
+          <Editor
+            ref={_ => (this._editorRef = _)}
+            style={{ width: "100%", height: "100%" }}
+            clickRadius={12}
+            mode={mode}
+            onSelect={this._onSelect}
+            onUpdate={this._onUpdate}
+            editHandleShape={"circle"}
+            featureStyle={getFeatureStyle}
+            editHandleStyle={getEditHandleStyle}
+          />
+          {this._renderDrawTools()}
+          {this._renderControlPanel()}
+        </MapGL>
+      </div>
     );
   }
 }
