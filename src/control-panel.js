@@ -9,6 +9,7 @@ export default class ControlPanel extends PureComponent {
     const polygonArea = polygon && area(polygon);
     return (
       <Container>
+        
         <h6>Latitude: {this.props.viewport.latitude.toFixed(2)}</h6>
         <h6>Longitude: {this.props.viewport.longitude.toFixed(2)}</h6>
         <h6>Zoom: {this.props.viewport.zoom ^ 0}</h6>

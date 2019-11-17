@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import { render } from "react-dom";
 import MapGL, { NavigationControl, GeolocateControl } from "react-map-gl";
 import { Editor, EditorModes } from "react-map-gl-draw";
@@ -30,6 +30,13 @@ const navStyle = {
   padding: "10px"
 };
 
+const datePickerStyle = {
+  position: "absolute",
+  top: 60,
+  left: 0,
+  padding: "10px"
+};
+
 export default class App extends Component {
   constructor(props) {
     super(props);
@@ -42,7 +49,13 @@ export default class App extends Component {
       },
       searchResultLayer: null,
       mode: EditorModes.READ_ONLY,
-      selectedFeatureIndex: null
+      selectedFeatureIndex: null,
+      startDate: new Date(),
+      endDate: new Date(
+        new Date().getFullYear(),
+        new Date().getMonth() - 3, 
+        new Date().getDate()
+      )
     };
   }
 
@@ -141,6 +154,8 @@ export default class App extends Component {
 
   render() {
     const { viewport, mode } = this.state;
+    const { startDate, setStartDate } = this.state;
+    const { endDate, setEndDate } = this.state;
     return (
       <div style={{ height: "100vh" }}>
         <MapGL
@@ -152,11 +167,7 @@ export default class App extends Component {
           mapboxApiAccessToken={TOKEN}
           onViewportChange={this._updateViewport}
         >
-          {/* <DatePicker
-            selected={this.state.date}
-            onSelect={this.handleSelect}
-            onChange={this.handleChange}
-          /> */}
+          <div style={{border: "1px solid red"}}>
           <Geocoder
             mapRef={this.mapRef}
             onResult={this._onResult}
@@ -164,6 +175,21 @@ export default class App extends Component {
             mapboxApiAccessToken={TOKEN}
             position="top-right"
           />
+          <DatePicker
+            selected={this.state.endDate}
+            onChange={date => this.setState({endDate: date})}
+            selectsEnd
+            endDate={this.state.endDate}
+            minDate={this.state.startDate}
+          />
+          <DatePicker
+            selected={this.state.startDate}
+            onChange={date => this.setState({startDate: date})}
+            selectsStart
+            startDate={this.state.startDate}
+            endDate={this.state.endDate}
+          />
+          </div>
 
           <Editor
             ref={_ => (this._editorRef = _)}
